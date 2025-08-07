@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Satisfaction Survey</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <style>
+        :root { --primary-color: #0d47a1; --secondary-color: #fdd835; --light-gray: #f4f7f6; --dark-text: #2c3e50; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--light-gray); color: var(--dark-text); line-height: 1.6; margin: 0; padding: 0; }
+        .app-container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+        .app-header { background-color: var(--primary-color); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-radius: 8px 8px 0 0; }
+        .app-header .logo { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 1.2em; }
+        .app-header .logo img { height: 40px; }
+        .app-header .login-controls button { background: var(--secondary-color); color: var(--dark-text); border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background-color 0.3s; }
+        .app-header .login-controls button:hover { background-color: #fbc02d; }
+        .main-content { background-color: white; padding: 2rem 2.5rem; border-radius: 0 0 8px 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .form-section, .dashboard-section { display: none; }
+        .form-section.active, .dashboard-section.active { display: block; }
+        .form-intro { background-color: #e3f2fd; border-left: 5px solid var(--primary-color); padding: 1.5rem; margin-bottom: 2rem; border-radius: 6px; }
+        fieldset { border: 1px solid #ddd; padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; }
+        legend { font-weight: bold; color: var(--primary-color); padding: 0 10px; font-size: 1.2em; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 600; }
+        .form-group label.required::after { content: ' *'; color: #d32f2f; }
+        input, select, textarea { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1em; box-sizing: border-box; }
+        .radio-group label { display: flex; align-items: center; margin-bottom: 0.5rem; font-weight: normal; }
+        .radio-group input { width: auto; margin-right: 10px; }
+        .rating-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .rating-table th, .rating-table td { padding: 1rem; text-align: center; border-bottom: 1px solid #eee; }
+        .rating-table th { font-size: 0.9em; color: #555; }
+        .rating-table td:first-child { text-align: left; }
+        .rating-table .smiley { font-size: 1.8em; }
+        .smiley.strongly-agree { color: #1e88e5; }
+        .smiley.agree { color: #42a5f5; }
+        .smiley.neutral { color: #90a4ae; }
+        .smiley.disagree { color: #ef5350; }
+        .smiley.strongly-disagree { color: #e53935; }
+        .submit-container { text-align: center; margin-top: 2rem; }
+        .submit-container button { background: var(--primary-color); color: white; padding: 15px 40px; border: none; border-radius: 50px; font-size: 1.1em; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .submit-container button:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+        .dashboard-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+        .dashboard-header h2 { margin: 0; }
+        .dashboard-filters { display: flex; gap: 10px; align-items: center; }
+        .dashboard-filters input[type="date"] { padding: 8px; }
+        .dashboard-header button { background: #17a2b8; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .dashboard-card { background-color: #f9fafb; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .dashboard-card h3 { margin-top: 0; color: var(--primary-color); border-bottom: 2px solid #eee; padding-bottom: 0.5rem; }
+        .dashboard-card.full-width { grid-column: 1 / -1; }
+        #loginModal .swal2-input { margin: 0.5rem 0; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <img src="images/cogon.png" alt="CNHS logo">
+                <span>Client Satisfaction Survey</span>
+            </div>
+            <div class="login-controls">
+                <button id="loginBtn">Admin Login</button>
+                <span id="authStatus" style="display:none;">
+                    <strong id="userEmail"></strong> | <button id="logoutBtn">Logout</button>
+                </span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div id="formView" class="form-section active">
+                <div class="form-intro">
+                    <p>This short Client Satisfaction Measurement (CSM) survey aims to track the customer experience of government offices. Your answers will enable this office to provide a better service.</p>
+                </div>
+                <form id="csmForm">
+                    <fieldset>
+                        <legend>Basic Information</legend>
+                        <div class="form-grid">
+                            <div class="form-group"><label for="age" class="required">Age</label><input type="number" id="age" name="age" required></div>
+                            <div class="form-group"><label for="sex" class="required">Sex</label><select id="sex" name="sex" required><option value="" disabled selected>Choose...</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
+                            <div class="form-group"><label for="clientType" class="required">Client Type</label><select id="clientType" name="clientType" required><option value="" disabled selected>Choose Type of Client...</option><option value="Citizen">Citizen</option><option value="Business">Business</option><option value="Government">Government Employee/Agency</option></select></div>
+                            <div class="form-group"><label for="clientSubtype">Sub-options</label><select id="clientSubtype" name="clientSubtype" disabled><option value="">Choose Sub-option...</option></select></div>
+                            <div class="form-group"><label for="officeVisited" class="required">Office Visited</label><select id="officeVisited" name="officeVisited" required><option value="" disabled selected>Choose Office Visited...</option><option value="Regional Office">Regional Office</option><option value="Provincial Office">Provincial Office</option></select></div>
+                            <div class="form-group"><label for="serviceAvailed" class="required">Service Availed</option><select id="serviceAvailed" name="serviceAvailed" required><option value="" disabled selected>Choose Service Availed...</option></select></div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Citizen's Charter (CC)</legend>
+                        <div class="form-group">
+                            <label class="required">CC1: Which of the following best describes your awareness of a CC?</label>
+                            <div class="radio-group" id="cc1">
+                                <label><input type="radio" name="cc1" value="1" required> I know what a CC is and I saw this office's CC.</label>
+                                <label><input type="radio" name="cc1" value="2"> I know what a CC is but I did NOT see this office's CC.</label>
+                                <label><input type="radio" name="cc1" value="3"> I learned of the CC only when I saw this office's CC.</label>
+                                <label><input type="radio" name="cc1" value="4"> I do not know what a CC is and I did not see one in this office.</label>
+                            </div>
+                        </div>
+                        <div class="form-group conditional-group" id="cc2-group" style="display:none;">
+                            <label class="required">CC2: If aware of the CC (answered 1-3 in CC1), would you say that the CC of this office was...?</label>
+                            <div class="radio-group" id="cc2">
+                                <label><input type="radio" name="cc2" value="1"> Easy to see</label>
+                                <label><input type="radio" name="cc2" value="2"> Somewhat easy to see</label>
+                                <label><input type="radio" name="cc2" value="3"> Difficult to see</label>
+                                <label><input type="radio" name="cc2" value="4"> Not visible at all</label>
+                            </div>
+                        </div>
+                        <div class="form-group conditional-group" id="cc3-group" style="display:none;">
+                            <label class="required">CC3: If aware of the CC (answered 1-3 in CC1), how much did the CC help you in your transaction?</label>
+                            <div class="radio-group" id="cc3">
+                                <label><input type="radio" name="cc3" value="1"> Helped very much</label>
+                                <label><input type="radio" name="cc3" value="2"> Somewhat helped</label>
+                                <label><input type="radio" name="cc3" value="3"> Did not help</label>
+                            </div>
+                        </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Service Quality</legend>
+                        <p>INSTRUCTIONS: For SQD questions, please put a check mark (✓) on the column that best corresponds to your answer.</p>
+                        <table class="rating-table">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th><span class="smiley strongly-agree">😊</span><br>Strongly Agree</th>
+                                    <th><span class="smiley agree">🙂</span><br>Agree</th>
+                                    <th><span class="smiley neutral">😐</span><br>Neither Agree nor Disagree</th>
+                                    <th><span class="smiley disagree">😠</span><br>Disagree</th>
+                                    <th><span class="smiley strongly-disagree">😡</span><br>Strongly Disagree</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Suggestions</legend>
+                        <div class="form-group full-width">
+                            <label for="suggestions">Suggestions on how we can further improve our services (optional):</label>
+                            <textarea id="suggestions" name="suggestions" rows="4"></textarea>
+                        </div>
+                        <div class="form-group full-width">
+                            <label for="contactEmail">Email address (optional):</label>
+                            <input type="email" id="contactEmail" name="contactEmail">
+                        </div>
+                    </fieldset>
+                    <div class="submit-container">
+                        <button type="submit">Submit</button>
+                    </div>
+                </form>
+            </div>
+
+            <div id="dashboardView" class="dashboard-section">
+                <div class="dashboard-header">
+                    <h2>Admin Dashboard</h2>
+                    <div class="dashboard-filters">
+                        <input type="date" id="reportStartDate">
+                        <input type="date" id="reportEndDate">
+                        <button id="filterBtn">Filter</button>
+                    </div>
+                    <button id="downloadReportBtn">Download PDF Report</button>
+                </div>
+                <div class="dashboard-grid">
+                    <div class="dashboard-card"><canvas id="responsesChart"></canvas></div>
+                    <div class="dashboard-card"><canvas id="genderChart"></canvas></div>
+                    <div class="dashboard-card"><canvas id="clientTypeChart"></canvas></div>
+                    <div class="dashboard-card full-width">
+                        <h3>Satisfaction Scores</h3>
+                        <canvas id="satisfactionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js"></script>
+
+    <script>
+        
+        const firebaseConfig = { apiKey: "AIzaSyCoxMOMVMYBjPvUcsfDMz-gOM7xBoua4GM", authDomain: "cnhs-clientsatisfaction.firebaseapp.com", databaseURL: "https://cnhs-clientsatisfaction-default-rtdb.firebaseio.com", projectId: "cnhs-clientsatisfaction", storageBucket: "cnhs-clientsatisfaction.firebasestorage.app", messagingSenderId: "49902494988", appId: "1:49902494988:web:b48e3ac0c6338bd3f89529" };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+        const auth = firebase.auth();
+        const { jsPDF } = window.jspdf;
+
+        
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const authStatus = document.getElementById('authStatus');
+        const userEmailSpan = document.getElementById('userEmail');
+        const formView = document.getElementById('formView');
+        const dashboardView = document.getElementById('dashboardView');
+        const csmForm = document.getElementById('csmForm');
+        const downloadReportBtn = document.getElementById('downloadReportBtn');
+        const filterBtn = document.getElementById('filterBtn'); // MODIFIED
+
+        
+        const sqdQuestions = [ { id: 'sqd0', text: 'I am satisfied with the service that I availed.' }, { id: 'sqd1', text: 'I spent a reasonable amount of time for my transaction.' }, { id: 'sqd2', text: 'The office followed the transaction\'s requirements and steps based on the information provided.' }, { id: 'sqd3', text: 'The steps (including payment) I needed to do for my transaction were easy and simple.' }, { id: 'sqd4', text: 'I easily found information about my transaction from the office or its website.' }, { id: 'sqd5', text: 'I paid an acceptable amount of fees for my transaction (Costs) Optional.' }, { id: 'sqd6', text: 'I feel the office was fair to everyone, or ‘walang palakasan’ during my transaction.' }, { id: 'sqd7', text: 'I was treated courteously by the staff, and (if asked for help) the staff was helpful.' }, { id: 'sqd8', text: 'I got what I needed from the government office, or (if denied) denial of request was sufficiently explained to me.' }, { id: 'sqd9', text: 'I completed the transaction within the expected time frame.' }, { id: 'sqd10', text: 'When I encountered any issues, they were resolved to my satisfaction.' } ];
+        const officeServices = { "Regional Office": ["Permits & Licensing", "Technical Assistance", "Training & Seminars"], "Provincial Office": ["Document Submission", "Information Inquiry", "Field Support"] };
+        const clientSubtypes = { "Citizen": ["Individual", "Group/Community"], "Business": ["SME", "Large Corporation", "NGO"], "Government": ["LGU", "National Agency"] };
+        let currentSubmissions = [];
+        
+
+        document.addEventListener('DOMContentLoaded', () => {
+            populateSQDQuestions();
+            auth.onAuthStateChanged(user => {
+                if (user) {
+                    loginBtn.style.display = 'none';
+                    authStatus.style.display = 'block';
+                    userEmailSpan.textContent = user.email;
+                    formView.classList.remove('active');
+                    dashboardView.classList.add('active');
+                    loadDashboardData();
+                } else {
+                    loginBtn.style.display = 'block';
+                    authStatus.style.display = 'none';
+                    formView.classList.add('active');
+                    dashboardView.classList.remove('active');
+                }
+            });
+            loginBtn.addEventListener('click', handleLogin);
+            logoutBtn.addEventListener('click', () => auth.signOut());
+            csmForm.addEventListener('submit', handleFormSubmit);
+            document.getElementById('clientType').addEventListener('change', handleClientTypeChange);
+            document.getElementById('officeVisited').addEventListener('change', handleOfficeChange);
+            document.querySelector('#cc1').addEventListener('change', handleCC1Change);
+            downloadReportBtn.addEventListener('click', handleDownloadReport);
+            filterBtn.addEventListener('click', loadDashboardData);
+        });
+
+        
+        function populateSQDQuestions() {
+            const tableBody = document.querySelector('.rating-table tbody');
+            sqdQuestions.forEach(q => {
+                const row = document.createElement('tr');
+                let radioButtonsHTML = '';
+                for (let i = 5; i >= 1; i--) { radioButtonsHTML += `<td><input type="radio" name="${q.id}" value="${i}" required></td>`; }
+                row.innerHTML = `<td><b>${q.id.toUpperCase()}:</b> ${q.text}</td>${radioButtonsHTML}`;
+                tableBody.appendChild(row);
+            });
+        }
+
+        function handleLogin() {
+            Swal.fire({ title: 'Admin Login', html: `<input type="email" id="email" class="swal2-input" placeholder="Email"><input type="password" id="password" class="swal2-input" placeholder="Password">`, confirmButtonText: 'Sign In', focusConfirm: false,
+                preConfirm: () => {
+                    const email = Swal.getPopup().querySelector('#email').value;
+                    const password = Swal.getPopup().querySelector('#password').value;
+                    if (!email || !password) { Swal.showValidationMessage(`Please enter email and password`); }
+                    return { email, password };
+                }
+            }).then(result => {
+                if (result.isConfirmed) {
+                    auth.signInWithEmailAndPassword(result.value.email, result.value.password).catch(error => Swal.showValidationMessage(`Request failed: ${error.message}`));
+                }
+            });
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const formData = new FormData(csmForm);
+            const submissionData = { timestamp: new Date().toISOString(), age: formData.get('age'), sex: formData.get('sex'), clientType: formData.get('clientType'), clientSubtype: formData.get('clientSubtype'), officeVisited: formData.get('officeVisited'), serviceAvailed: formData.get('serviceAvailed'), cc1: formData.get('cc1'), cc2: formData.get('cc2') || 'N/A', cc3: formData.get('cc3') || 'N/A', suggestions: formData.get('suggestions') || '', contactEmail: formData.get('contactEmail') || '', ratings: {} };
+            sqdQuestions.forEach(q => { submissionData.ratings[q.id] = formData.get(q.id); });
+            database.ref('csm-submissions').push(submissionData)
+                .then(() => {
+                    Swal.fire('Success!', 'Your feedback has been submitted. Thank you!', 'success');
+                    csmForm.reset();
+                    document.getElementById('cc2-group').style.display = 'none';
+                    document.getElementById('cc3-group').style.display = 'none';
+                })
+                .catch(error => { Swal.fire('Error', `Submission failed: ${error.message}`, 'error'); });
+        }
+
+        function handleClientTypeChange(e) {
+            const subtypeSelect = document.getElementById('clientSubtype');
+            const subtypes = clientSubtypes[e.target.value] || [];
+            subtypeSelect.innerHTML = '<option value="">Choose Sub-option...</option>';
+            subtypes.forEach(sub => subtypeSelect.add(new Option(sub, sub)));
+            subtypeSelect.disabled = subtypes.length === 0;
+        }
+
+        function handleOfficeChange(e) {
+            const serviceSelect = document.getElementById('serviceAvailed');
+            const services = officeServices[e.target.value] || [];
+            serviceSelect.innerHTML = '<option value="" disabled selected>Choose Service Availed...</option>';
+            services.forEach(srv => serviceSelect.add(new Option(srv, srv)));
+        }
+
+        function handleCC1Change(e) {
+            const isAware = e.target.value !== '4';
+            document.getElementById('cc2-group').style.display = isAware ? 'block' : 'none';
+            document.getElementById('cc3-group').style.display = isAware ? 'block' : 'none';
+            document.querySelectorAll('input[name="cc2"]').forEach(radio => radio.required = isAware);
+            document.querySelectorAll('input[name="cc3"]').forEach(radio => radio.required = isAware);
+        }
+
+        function handleDownloadReport() {
+            if (currentSubmissions.length > 0) {
+                generateDashboardPdf(currentSubmissions);
+            } else {
+                Swal.fire('No Data', 'There is no data to generate a report for the selected range.', 'info');
+            }
+        }
+        
+        
+        let charts = {};
+        async function loadDashboardData() {
+            
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            
+            let query = database.ref('csm-submissions').orderByChild('timestamp');
+            if (startDate) query = query.startAt(new Date(startDate).toISOString());
+            if (endDate) query = query.endAt(new Date(endDate + 'T23:59:59.999Z').toISOString());
+            
+            const snapshot = await query.once('value');
+            const data = snapshot.val();
+            
+            const dashboardContent = document.querySelector('.dashboard-grid');
+            if(!data) {
+                dashboardContent.innerHTML = '<h3>No submission data found for the selected range.</h3>';
+                currentSubmissions = [];
+                return;
+            } else {
+                
+                if (!document.getElementById('responsesChart')) {
+                    dashboardContent.innerHTML = `<div class="dashboard-card"><canvas id="responsesChart"></canvas></div><div class="dashboard-card"><canvas id="genderChart"></canvas></div><div class="dashboard-card"><canvas id="clientTypeChart"></canvas></div><div class="dashboard-card full-width"><h3>Satisfaction Scores</h3><canvas id="satisfactionChart"></canvas></div>`;
+                }
+            }
+
+            const submissions = Object.values(data);
+            currentSubmissions = submissions;
+            Object.values(charts).forEach(chart => chart.destroy());
+            createResponsesByDayChart(submissions);
+            createDemographicsCharts(submissions);
+            createSatisfactionChart(submissions);
+        }
+
+        function createResponsesByDayChart(submissions) { /* ... remains the same */ }
+        function createDemographicsCharts(submissions) { /* ... remains the same */ }
+        function createSatisfactionChart(submissions) { /* ... remains the same */ }
+        
+        function createResponsesByDayChart(submissions) { const ctx = document.getElementById('responsesChart').getContext('2d'); const responsesByDay = submissions.reduce((acc, curr) => { const day = new Date(curr.timestamp).toLocaleDateString(); acc[day] = (acc[day] || 0) + 1; return acc; }, {}); charts.responses = new Chart(ctx, { type: 'line', data: { labels: Object.keys(responsesByDay), datasets: [{ label: 'Submissions per Day', data: Object.values(responsesByDay), borderColor: 'rgba(13, 71, 161, 1)', backgroundColor: 'rgba(13, 71, 161, 0.1)', fill: true, tension: 0.3 }] } }); }
+        function createDemographicsCharts(submissions) { const genderData = submissions.reduce((acc, curr) => { acc[curr.sex] = (acc[curr.sex] || 0) + 1; return acc; }, {}); const clientTypeData = submissions.reduce((acc, curr) => { acc[curr.clientType] = (acc[curr.clientType] || 0) + 1; return acc; }, {}); const genderCtx = document.getElementById('genderChart').getContext('2d'); charts.gender = new Chart(genderCtx, { type: 'doughnut', data: { labels: Object.keys(genderData), datasets: [{ data: Object.values(genderData), backgroundColor: ['#42a5f5', '#ef5350', '#9e9e9e'] }] }, options: { plugins: { title: { display: true, text: 'Gender Distribution' } } } }); const clientTypeCtx = document.getElementById('clientTypeChart').getContext('2d'); charts.clientType = new Chart(clientTypeCtx, { type: 'pie', data: { labels: Object.keys(clientTypeData), datasets: [{ data: Object.values(clientTypeData), backgroundColor: ['#1e88e5', '#fdd835', '#43a047'] }] }, options: { plugins: { title: { display: true, text: 'Client Type Distribution' } } } }); }
+        function createSatisfactionChart(submissions) { const satisfactionData = sqdQuestions.map(q => { const scores = submissions.map(s => parseInt(s.ratings[q.id])).filter(Boolean); const average = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0; return average.toFixed(2); }); const ctx = document.getElementById('satisfactionChart').getContext('2d'); charts.satisfaction = new Chart(ctx, { type: 'bar', data: { labels: sqdQuestions.map(q => q.id.toUpperCase()), datasets: [{ label: 'Average Satisfaction Score (out of 5)', data: satisfactionData, backgroundColor: 'rgba(22, 160, 133, 0.6)', borderColor: 'rgba(22, 160, 133, 1)', borderWidth: 1 }] }, options: { indexAxis: 'y', scales: { x: { beginAtZero: true, max: 5 } } } }); }
+        
+        
+        function generateDashboardPdf(data) {
+            const doc = new jsPDF();
+            const totalResponses = data.length;
+            const today = new Date().toLocaleDateString('en-US');
+            const startDate = document.getElementById('reportStartDate').value;
+            const endDate = document.getElementById('reportEndDate').value;
+            const dateRange = (startDate && endDate) ? `${startDate} to ${endDate}` : 'All Time';
+            let yPos = 40;
+
+            doc.setFontSize(18);
+            doc.text("Client Satisfaction Measurement Report", 105, 20, { align: 'center' });
+            doc.setFontSize(12);
+            doc.text(`Report Generated: ${today} | Data Range: ${dateRange} | Total Responses: ${totalResponses}`, 105, 30, { align: 'center' });
+
+            const genderData = data.reduce((acc, curr) => { acc[curr.sex] = (acc[curr.sex] || 0) + 1; return acc; }, {});
+            const clientTypeData = data.reduce((acc, curr) => { acc[curr.clientType] = (acc[curr.clientType] || 0) + 1; return acc; }, {});
+            const officeData = data.reduce((acc, curr) => { acc[curr.officeVisited] = (acc[curr.officeVisited] || 0) + 1; return acc; }, {});
+            
+            doc.autoTable({ startY: yPos, head: [['Category', 'Group', 'Count', 'Percentage']], body: [ ...Object.entries(genderData).map(([k,v]) => ['Gender', k, v, `${((v/totalResponses)*100).toFixed(1)}%`]), ...Object.entries(clientTypeData).map(([k,v]) => ['Client Type', k, v, `${((v/totalResponses)*100).toFixed(1)}%`]), ...Object.entries(officeData).map(([k,v]) => ['Office Visited', k, v, `${((v/totalResponses)*100).toFixed(1)}%`]) ], theme: 'grid', headStyles: { fillColor: [44, 62, 80] } });
+            yPos = doc.autoTable.previous.finalY + 10;
+
+            const cc1Map = {'1':'Saw CC','2':'Knew but Didn\'t See','3':'Learned of CC','4':'Didn\'t Know'};
+            const cc2Map = {'1':'Easy to see','2':'Somewhat easy','3':'Difficult to see','4':'Not visible'};
+            const cc3Map = {'1':'Helped very much','2':'Somewhat helped','3':'Did not help'};
+            const cc1Data = data.reduce((acc, curr) => { acc[cc1Map[curr.cc1]] = (acc[cc1Map[curr.cc1]] || 0) + 1; return acc; }, {});
+            const cc2Data = data.filter(d=>d.cc2!=='N/A').reduce((acc, curr) => { acc[cc2Map[curr.cc2]] = (acc[cc2Map[curr.cc2]] || 0) + 1; return acc; }, {});
+            const cc3Data = data.filter(d=>d.cc3!=='N/A').reduce((acc, curr) => { acc[cc3Map[curr.cc3]] = (acc[cc3Map[curr.cc3]] || 0) + 1; return acc; }, {});
+            doc.autoTable({ startY: yPos, head: [['Citizen\'s Charter (CC) Responses', 'Response', 'Count']], body: [ ...Object.entries(cc1Data).map(([k,v]) => ['CC1: Awareness', k, v]), ...Object.entries(cc2Data).map(([k,v]) => ['CC2: Visibility', k, v]), ...Object.entries(cc3Data).map(([k,v]) => ['CC3: Helpfulness', k, v]), ], theme: 'striped', headStyles: { fillColor: [22, 160, 133] } });
+            yPos = doc.autoTable.previous.finalY + 10;
+            
+            const satisfactionAverages = sqdQuestions.map(q => { const scores = data.map(s => parseInt(s.ratings[q.id])).filter(Boolean); const average = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0; return { id: q.id.toUpperCase(), text: q.text.split('.')[0], avg: average.toFixed(2) }; });
+            doc.autoTable({ startY: yPos, head: [['ID', 'Service Quality Dimension Question', 'Avg. Score (1-5)']], body: satisfactionAverages.map(s => [s.id, s.text, s.avg]), headStyles: { fillColor: [22, 160, 133] } });
+
+            const suggestions = data.filter(d => d.suggestions && d.suggestions.trim() !== '');
+            if (suggestions.length > 0) {
+                doc.addPage();
+                doc.setFontSize(16);
+                doc.text("Suggestions & Contact Information", 14, 22);
+                const suggestionBody = suggestions.map(d => [d.suggestions, d.contactEmail || 'N/A']);
+                doc.autoTable({ startY: 30, head: [['Suggestion', 'Contact Email']], body: suggestionBody });
+            }
+            
+            doc.save(`CSM-Report-${new Date().toISOString().split('T')[0]}.pdf`);
+        }
+    </script>
+</body>
+</html>
